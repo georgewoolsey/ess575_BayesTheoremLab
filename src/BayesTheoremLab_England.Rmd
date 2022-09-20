@@ -4,7 +4,7 @@ author: "Team England"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 output:
   pdf_document:
-    toc: true
+    toc: false
     toc_depth: 3
 linkcolor: blue
 header-includes:
@@ -184,6 +184,7 @@ Write an R function for the likelihood. The function must use all `50` observati
 $$
 [\mathbf{y} \mid \theta] = \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}
 $$
+
 ### Function for the likelihood
 
 ```{r}
@@ -215,12 +216,12 @@ ggplot(., mapping = aes(x = theta, y = likelihood_y_theta)) +
   xlab(latex2exp::TeX("$\\theta$")) +
   ylab(latex2exp::TeX("$\\[y | \\theta\\]$")) +
   labs(
-    title = "Likelihood profile"
+    title = "Likelihood function"
   ) +
   theme_bw()
 ```
 
-\textcolor{violet}{We use $[y \mid \theta]$ to assess the likelihood of different values of $\theta$ in light of the data. In this case, the function does not sum or integrate to one over all possible values of the parameter. The inference we can make based on likelihood alone if we multiply the curve by a constant is the same but would be proportional to the constant.}**
+\textcolor{violet}{We use $[y \mid \theta]$ to assess the likelihood of different values of $\theta$ in light of the data. In this case, the function does not sum or integrate to one over all possible values of the parameter. The inference we can make based on likelihood alone if we multiply the curve by a constant is the same but would be proportional to the constant.}
 
 # The joint distribution
 
@@ -233,6 +234,7 @@ What is the mathematical expression for the joint distribution $[\theta,\mathbf{
 $$
 [\mathbf{y} \mid \theta] = \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{.5^{2}}\Bigr)}
 $$
+
 ### Function for the joint
 
 ```{r}
@@ -263,3 +265,62 @@ ggplot(., mapping = aes(x = theta, y = joint_theta)) +
 
 \textcolor{violet}{Yes, the values on the plot seem reasonable because the result is the product of the likelihood function and the prior distribution. The values on the y-axis are very small because the values on the y-axis of the likelihood function were very small and the values on the y-axis of the prior distribution were less than 1.}
 
+# The marginal probability of the data
+
+What is the mathematical expression for the marginal probability of the data $[\mathbf{y}]$? Again, be as specific as possible with the information you have been given. Approximate the marginal probability of the data, the integral of the likelihood multiplied by the prior, to obtain a normalization constant $[\mathbf{y}]$. How would you accomplish this integration? (Hint–Recall the first principles definition of the definite integral.) Explain the output of this integration, a scalar. Why do we call $[\mathbf{y}]$ a “distribution” if it evaluates to a scalar?
+
+### Mathematical expression for the marginal probability of the data $[\mathbf{y}]$
+
+$$
+[\mathbf{y}] = \int_{\theta}  \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{.5^{2}}\Bigr) d \theta}
+$$
+
+### Approximate the marginal probability of the data
+
+```{r}
+marginal_p_y <- sum(
+  joint(theta = theta, y = y, mu = mu.prior, sigma = sigma.prior)
+  * step
+)
+```
+
+\textcolor{violet}{The approximate marginal probability of the data, the normalizing constant, is: }**\textcolor{violet}{`r scales::scientific(marginal_p_y)`}**
+
+\textcolor{violet}{The marginal distribution of the data, the normalizing constant, (the denominator) is the area under the joint distribution. We call $[\mathbf{y}]$ a distribution even though it evaluates to a scalar because the data are fixed after they are collected.}
+
+# The posterior distribution
+
+What is the mathematical expression for the posterior distribution $[\theta \mid \mathbf{y}]$? Be as specific as possible using the information you have been given. Compute the posterior distribution by dividing each element of the vector of output produced by the joint function by the integral of the joint function. Plot the posterior as a function of $\theta$.
+
+### Mathematical expression for the posterior distribution $[\theta \mid \mathbf{y}]$
+
+$$
+[\theta \mid \mathbf{y}] = \cfrac{\prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{.5^{2}}\Bigr)}}{\int_{\theta}  \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{.5^{2}}\Bigr) d \theta}}
+$$
+
+### Compute the posterior distribution 
+
+```{r}
+posterior_dist <- joint(theta = theta, y = y, mu = mu.prior, sigma = sigma.prior) / 
+  sum(
+    joint(theta = theta, y = y, mu = mu.prior, sigma = sigma.prior)
+    * step
+  )
+```
+
+### Plot the posterior as a function of $\theta$
+
+```{r}
+data.frame(
+  theta
+  , posterior_dist
+) %>% 
+ggplot(., mapping = aes(x = theta, y = posterior_dist)) +
+  geom_line(lwd = 1.2, color = "black") +
+  xlab(latex2exp::TeX("$\\theta$")) +
+  ylab(latex2exp::TeX("$\\[\\theta | y\\]$")) +
+  labs(
+    title = "Posterior distribution"
+  ) +
+  theme_bw()
+```
