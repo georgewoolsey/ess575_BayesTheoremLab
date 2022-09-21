@@ -34,6 +34,8 @@ library(lubridate)
 library(viridis)
 library(scales)
 library(latex2exp)
+library(ggpubr)
+library(cowplot)
 
 # knit options
 knitr::opts_chunk$set(
@@ -59,8 +61,8 @@ Simulate 50 data points from a Poisson distribution with mean $\theta$ = 6.4 to 
 
 ```{r}
 n <- 50
-xx <- 6.4
-y <- rpois(n = n, lambda = xx)
+lambda <- 6.4
+y <- rpois(n = n, lambda = lambda)
 ```
 
 \textcolor{violet}{The variance ($\lambda$) of the simulated Poisson distribution with mean $\theta$ = 6.4 is:} **\textcolor{violet}{`r scales::comma(var(y), accuracy = .1)`}**
@@ -71,6 +73,7 @@ Plot a histogram of the data with density on the y-axis. It turns out that the h
 
 ```{r}
 # summarize data for plotting
+plt_1 <-
 data.frame(
     y = y
   ) %>% 
@@ -85,7 +88,11 @@ data.frame(
     ) +
     xlab("y") +
     ylab("density") +
+    labs(
+      title = "Histogram of data"
+    ) +
     theme_bw()
+plt_1
 ```
 
 \textcolor{violet}{The base histogram function in R is not really appropriate for discrete data because histograms are suited to continuous data which can be binned. Plotting data for categorical or discrete data is best accomplished in R using} `ggplot2::geom_col` or `ggplot2::geom_bar`
@@ -100,7 +107,7 @@ sigma.prior <- 0.5
 ```
 
 
-## 4.
+## 4
 
 Set up a vector containing a sequence of values for $\theta$, the mean number of invasive plants, You want this vector to approximate a continuous $\theta$, so be sure it contains values that are not too far apart. Use code like this: `theta = seq(0, 15, step)` where you set `step = .01`. Setting a value for `step` with global scope is important. You will use it later when you integrate.
 
@@ -114,6 +121,15 @@ theta <- seq(0, 15, step)
 ## 5
 
 Write the mathematical expression for a gamma prior on $\theta$. Be as specific as possible given the information at hand. Write an R function for the prior on $\theta$. The function for the prior should return a vector of gamma probability densities, one for each value of $\theta$. It should have arguments 1) the vector for $\theta$ you created in the previous step as well as 2) the prior mean and 3) the prior standard deviation. The mean and the standard deviation, of course, will need to be moment-matched to the proper parameters of the gamma distribution in your function. Recall that when a function is composed of a single statement as it is here, the statement can simply follow the function template on the same line; curly brackets are not needed. So, in this case `mu.prior = 10.2` and `sigma.prior = 0.5`. You could hard-code these in the function template, but that is bad practice.
+
+### Mathematical expression for a gamma prior on $[\theta]$
+
+
+$$
+[\mathbf{\theta}] = \sf{gamma}\mathrm{\Biggl(\frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{0.5^{2}}\Biggr)}
+$$
+
+### Function for the prior
 
 ```{r}
 # define function
@@ -138,6 +154,7 @@ prior_theta <- prior(theta = theta, mu = mu.prior, sigma = sigma.prior)
 Plot the prior distribution of $\theta$, the probability density of $\theta$ as a function of the values of $\theta$.
 
 ```{r}
+plt_2 <-
 # plot
 data.frame(
   theta
@@ -151,6 +168,7 @@ ggplot(., mapping = aes(x = theta, y = prior_theta)) +
     title = "Prior distribution"
   ) +
   theme_bw()
+plt_2
 ```
 
 ## 7
@@ -206,6 +224,7 @@ likelihood_y_theta <- like(theta = theta, y = y)
 Plot the likelihood $[\mathbf{y} \mid \theta_i]$ holding the data constant and varying $\theta$. What is this plot called? Can you say anything about the area under the curve? What happens to the inference we can make based on likelihood alone if we multiply the curve by a constant?
 
 ```{r}
+plt_3 <-
 # plot
 data.frame(
   theta
@@ -213,12 +232,14 @@ data.frame(
 ) %>% 
 ggplot(., mapping = aes(x = theta, y = likelihood_y_theta)) +
   geom_line(lwd = 1.2, color = "gray35") +
+  scale_y_continuous(labels = scales::label_scientific(digits = 2)) +
   xlab(latex2exp::TeX("$\\theta$")) +
   ylab(latex2exp::TeX("$\\[y | \\theta\\]$")) +
   labs(
     title = "Likelihood function"
   ) +
   theme_bw()
+plt_3
 ```
 
 \textcolor{violet}{We use $[y \mid \theta]$ to assess the likelihood of different values of $\theta$ in light of the data. In this case, the function does not sum or integrate to one over all possible values of the parameter. The inference we can make based on likelihood alone if we multiply the curve by a constant is the same but would be proportional to the constant.}
@@ -249,30 +270,36 @@ joint_theta <- joint(theta = theta, y = y, mu = mu.prior, sigma = sigma.prior)
 ### Plot `joint(theta)` as a function of `theta`
 
 ```{r}
+plt_4 <-
+#plot
 data.frame(
   theta
   , joint_theta
 ) %>% 
 ggplot(., mapping = aes(x = theta, y = joint_theta)) +
   geom_line(lwd = 1.2, color = "gray15") +
+  scale_y_continuous(labels = scales::label_scientific(digits = 2)) +
   xlab(latex2exp::TeX("$\\theta$")) +
   ylab(latex2exp::TeX("$\\[y | \\theta\\] \\cdot \\[\\theta\\]$")) +
   labs(
     title = "Joint"
   ) +
   theme_bw()
+plt_4
 ```
 
 \textcolor{violet}{Yes, the values on the plot seem reasonable because the result is the product of the likelihood function and the prior distribution. The values on the y-axis are very small because the values on the y-axis of the likelihood function were very small and the values on the y-axis of the prior distribution were less than 1.}
 
 # The marginal probability of the data
 
+## 11
+
 What is the mathematical expression for the marginal probability of the data $[\mathbf{y}]$? Again, be as specific as possible with the information you have been given. Approximate the marginal probability of the data, the integral of the likelihood multiplied by the prior, to obtain a normalization constant $[\mathbf{y}]$. How would you accomplish this integration? (Hint–Recall the first principles definition of the definite integral.) Explain the output of this integration, a scalar. Why do we call $[\mathbf{y}]$ a “distribution” if it evaluates to a scalar?
 
 ### Mathematical expression for the marginal probability of the data $[\mathbf{y}]$
 
 $$
-[\mathbf{y}] = \int_{\theta}  \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{.5^{2}}\Bigr) d \theta}
+[\mathbf{y}] = \int_{\theta}  \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{0.5^{2}}\Bigr) d \theta}
 $$
 
 ### Approximate the marginal probability of the data
@@ -289,6 +316,8 @@ marginal_p_y <- sum(
 \textcolor{violet}{The marginal distribution of the data, the normalizing constant, (the denominator) is the area under the joint distribution. We call $[\mathbf{y}]$ a distribution even though it evaluates to a scalar because the data are fixed after they are collected.}
 
 # The posterior distribution
+
+## 12
 
 What is the mathematical expression for the posterior distribution $[\theta \mid \mathbf{y}]$? Be as specific as possible using the information you have been given. Compute the posterior distribution by dividing each element of the vector of output produced by the joint function by the integral of the joint function. Plot the posterior as a function of $\theta$.
 
@@ -311,6 +340,8 @@ posterior_dist <- joint(theta = theta, y = y, mu = mu.prior, sigma = sigma.prior
 ### Plot the posterior as a function of $\theta$
 
 ```{r}
+plt_5 <-
+#plot
 data.frame(
   theta
   , posterior_dist
@@ -323,4 +354,182 @@ ggplot(., mapping = aes(x = theta, y = posterior_dist)) +
     title = "Posterior distribution"
   ) +
   theme_bw()
+plt_5
 ```
+
+
+# Putting it all together
+
+## 13
+
+Plot the prior, a histogram of the data, the likelihood, the joint, and the posterior in a six panel layout. Your results should be the same as the plot below:
+
+```{r}
+# combine charts
+  ggpubr::ggarrange(
+      plt_1, plt_2, plt_3, plt_4, plt_5
+      , nrow = 2
+      , ncol = 3
+    )
+```
+
+## 14
+
+Overlay the prior, the likelihood, and the posterior on a single plot. To do this, you will need to rescale the likelihood, which of course is OK because it is defined up to an arbitrary, multiplicative constant, i.e., $[y \mid \theta] = cL(\theta \mid y)$. It doesn’t matter what $c$ is. We can rescale the likelihood to any value we like and the inference doesn’t change because all evidence is relative in the likelihood framework. Do the following to obtain a scaled likelihood that can be plotted in a revealing way next to the posterior distribution. Divide each element in the likelihood vector by the maximum likelihood (thus, the maximum becomes 1). Multiply the resulting vector by the maximum value of the posterior density.
+
+```{r}
+# scale likelihood
+scaled_likelihood <- (likelihood_y_theta/max(likelihood_y_theta)) * max(posterior_dist)
+
+#plot
+plt_overlay <-
+data.frame(
+  theta
+  , scaled_likelihood
+  , posterior_dist
+  , prior_theta
+) %>% 
+ggplot(., mapping = aes(x = theta)) +
+  geom_line(mapping = aes(y = prior_theta, color = "Prior Distribution"), lwd = 1.2) +
+  geom_line(mapping = aes(y = scaled_likelihood, color = "Scaled Likelihood"), lwd = 1.2) +
+  geom_line(mapping = aes(y = posterior_dist, color = "Posterior Distribution"), lwd = 1.2) +
+  xlab(latex2exp::TeX("$\\theta$")) +
+  ylab("Probability") +
+  labs(
+    title = "Probability Overlay"
+  ) +
+  scale_color_viridis_d(alpha = 0.8) +
+  theme_bw() +
+  theme(
+    legend.title = element_blank()
+    , legend.position = "bottom"
+    , legend.direction = "horizontal"
+    , legend.justification = "center" 
+    , legend.box.just = "bottom"
+  ) +
+  guides(color = guide_legend(override.aes = list(size = 5)))
+plt_overlay
+```
+
+
+## 15
+
+Check to be sure that everything is correct using the gamma-Poisson *conjugate* relationship. A gamma distribution is the conjugate for the Poisson likelihood, which means if we have a gamma prior and a Poisson likelihood, then the posterior is a gamma distribution with parameters $\alpha + \sum_{i=1}^{n} y_{i}$ and $\beta + n$, where $\alpha$ and $\beta$ are the parameters of the gamma prior, and we have $n$ observations ($y_i$) of new data. Overlay a plot of the posterior obtained using the conjugate on the plot of the posterior obtained by integration. Your plot should look like the one below. Take a look at your scaled overlay of the posterior, the likelihood, and the prior. The likelihood profile for $\theta$ is based on the data but it shows much less dispersion than the distribution of the data shown in the histogram you constructed. Why?
+
+```{r}
+# # Calculate the posterior using gamma-Poisson conjugate relationship and overlay on the integrated posterior
+# p.conj = dgamma(theta, sum(y) + mu.prior^2 / sigma.prior^2, length(y) + mu.prior / sigma.prior^2)
+# 
+# par(mfrow=c(1, 1))
+# plot(theta, like.scaled, type = "l", col = "red", xlim = c(5,15), xlab = expression(theta), 
+#   ylab = "Probability density", main = "Scaled Overlay")
+# lines(theta, prior(theta), col = "blue")
+# lines(theta, p.conj, type = "l", lwd = 1, col = "orange")
+# lines(theta, p.theta, col = "black", lwd = 4, type = "l", lty = "dashed")
+# 
+# legend(11, 1.2, legend= c("Scaled likelihood", "Prior","Integrated posterior", "Conjugate posterior"), cex = .8, 
+#   lwd = 2, bty = "n", col = c("red", "blue", "black", "orange"), lty = c("solid", "solid", "dashed", "solid"))
+
+```
+
+
+## 16
+
+Now that you have these lovely functions working and plots emerging from them, do some experiments to understand the effect of prior information on the posterior distribution of $\theta$ relative to the effect of the data. Increase the variance of the prior distribution to 2.5. Reduce it to .1. Increase the number of observations from 50 to 100. Examine the overlaid plots you produced above for each case.
+
+### Simulation function
+
+```{r}
+sim_function <- function(n_sim, lambda_sim, theta_min, theta_max, theta_step, mu_prior, sigma_prior){
+  # define theta
+  theta_temp <- seq(theta_min, theta_max, theta_step)
+  # simulate the y data
+  y_temp <- rpois(n = n_sim, lambda = lambda_sim)
+  # prior distribution
+  prior_temp <- prior(theta = theta_temp, mu = mu_prior, sigma = sigma_prior)
+  # likelihood
+  likelihood_temp <- like(theta = theta_temp, y = y_temp)
+  # joint distribution
+  joint_temp <- joint(theta = theta_temp, y = y_temp, mu = mu_prior, sigma = sigma_prior)
+  #  normalizing constant (i.e marginal probability of the data)
+  marginal_p_temp <- sum(joint_temp * theta_step)
+  # posterior distribution
+  posterior_temp <- joint_temp / marginal_p_temp
+  # scaled likelihood
+  scaled_likelihood_temp <- (likelihood_temp/max(likelihood_temp)) * max(posterior_temp)
+  # combine together in data frame
+  dta_temp <- data.frame(
+      theta = theta_temp
+      , prior = prior_temp
+      , likelihood = scaled_likelihood_temp
+      , posterior = posterior_temp
+    ) %>% 
+    dplyr::mutate(
+      n = n_sim
+      , lambda = lambda_sim
+      , mu_prior = mu_prior
+      , sigma_prior = sigma_prior
+    )
+  return(dta_temp)
+}
+```
+
+### Simulation Plots
+
+```{r}
+# data frame for sim
+sim_dta <- data.frame(n = c(50, 100)) %>% # n
+  dplyr::full_join(data.frame(sigma = c(0.1, 0.5, 2.5)), by = character()) %>%  # sigma
+  dplyr::arrange(n, sigma)
+
+# set up plot grid
+plts <- list()
+# create plot for each
+# for (i in 1:nrow(sim_dta)) {
+for (i in 1:6) {
+  plts[[i]] <-
+    sim_function(
+      n_sim = sim_dta$n[i]
+      , lambda_sim = 6.4
+      , theta_min = 0
+      , theta_max = 15
+      , theta_step = step
+      , mu_prior = mu.prior
+      , sigma_prior = sim_dta$sigma[i]
+    ) %>% 
+    ggplot(., mapping = aes(x = theta)) +
+      geom_line(mapping = aes(y = prior, color = "Prior Distribution"), lwd = 1) +
+      geom_line(mapping = aes(y = likelihood, color = "Scaled Likelihood"), lwd = 1) +
+      geom_line(mapping = aes(y = posterior, color = "Posterior Distribution"), lwd = 1) +
+      xlab(latex2exp::TeX("$\\theta$")) +
+      ylab("Probability") +
+      labs(
+        title = bquote(paste(
+          "n = "
+          , .(sim_dta$n[i])
+          , "; "
+          , sigma^2
+          , " = "
+          , .(sim_dta$sigma[i])
+        ))
+      ) +
+      scale_color_viridis_d(alpha = 0.8) +
+      theme_bw() +
+      theme(
+        legend.title = element_blank()
+        , legend.position="none"
+        , plot.title = element_text(size = 10)
+        , axis.text = element_text(size = 8)
+        , axis.title = element_text(size = 8)
+      ) +
+      guides(color = guide_legend(override.aes = list(size = 5)))
+  
+}
+
+# extract the legend from one of the plots
+plts[[nrow(sim_dta)+1]] <- NA
+plts[[nrow(sim_dta)+2]] <- get_legend(plt_overlay)
+cowplot::plot_grid(plotlist =  plts, nrow = 3, rel_heights = c(1, 1, 0.15))
+
+```
+
