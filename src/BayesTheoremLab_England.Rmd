@@ -91,7 +91,11 @@ data.frame(
     labs(
       title = "Histogram of data"
     ) +
-    theme_bw()
+    theme_bw() +
+    theme(
+      plot.title = element_text(size = 10)
+      , axis.text.x = element_text(size = 8)
+    )
 plt_1
 ```
 
@@ -161,13 +165,17 @@ data.frame(
   , prior_theta
 ) %>% 
 ggplot(., mapping = aes(x = theta, y = prior_theta)) +
-  geom_line(lwd = 1.2, color = "gray55") +
+  geom_line(lwd = 1.2, color = viridisLite::viridis(n = 3)[2]) +
   xlab(latex2exp::TeX("$\\theta$")) +
   ylab(latex2exp::TeX("$\\[\\theta\\]$")) +
   labs(
     title = "Prior distribution"
   ) +
-  theme_bw()
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 10)
+    , axis.text.x = element_text(size = 8)
+  )
 plt_2
 ```
 
@@ -231,14 +239,18 @@ data.frame(
   , likelihood_y_theta
 ) %>% 
 ggplot(., mapping = aes(x = theta, y = likelihood_y_theta)) +
-  geom_line(lwd = 1.2, color = "gray35") +
+  geom_line(lwd = 1.2, color = viridisLite::viridis(n = 3)[3]) +
   scale_y_continuous(labels = scales::label_scientific(digits = 2)) +
   xlab(latex2exp::TeX("$\\theta$")) +
   ylab(latex2exp::TeX("$\\[y | \\theta\\]$")) +
   labs(
     title = "Likelihood function"
   ) +
-  theme_bw()
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 10)
+    , axis.text.x = element_text(size = 8)
+  )
 plt_3
 ```
 
@@ -253,7 +265,7 @@ What is the mathematical expression for the joint distribution $[\theta,\mathbf{
 ### Mathematical expression for the joint distribution $[\theta,\mathbf{y}]$
 
 $$
-[\mathbf{y} \mid \theta] = \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{.5^{2}}\Bigr)}
+[\mathbf{y} \mid \theta] = \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{0.5^{2}}\Bigr)}
 $$
 
 ### Function for the joint
@@ -277,14 +289,18 @@ data.frame(
   , joint_theta
 ) %>% 
 ggplot(., mapping = aes(x = theta, y = joint_theta)) +
-  geom_line(lwd = 1.2, color = "gray15") +
+  geom_line(lwd = 1.2, color = "gray75") +
   scale_y_continuous(labels = scales::label_scientific(digits = 2)) +
   xlab(latex2exp::TeX("$\\theta$")) +
   ylab(latex2exp::TeX("$\\[y | \\theta\\] \\cdot \\[\\theta\\]$")) +
   labs(
     title = "Joint"
   ) +
-  theme_bw()
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 10)
+    , axis.text.x = element_text(size = 8)
+  )
 plt_4
 ```
 
@@ -324,7 +340,7 @@ What is the mathematical expression for the posterior distribution $[\theta \mid
 ### Mathematical expression for the posterior distribution $[\theta \mid \mathbf{y}]$
 
 $$
-[\theta \mid \mathbf{y}] = \cfrac{\prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{.5^{2}}\Bigr)}}{\int_{\theta}  \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{.5^{2}}\Bigr) d \theta}}
+[\theta \mid \mathbf{y}] = \cfrac{\prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{0.5^{2}}\Bigr)}}{\int_{\theta}  \prod_{i=1}^{50} \sf{Poisson} \mathrm{(y_{i} \mid \theta)}\; \cdot \; \sf{gamma}\mathrm{\Bigl(\theta \mid \frac{10.2^{2}}{0.5^{2}}, \frac{10.2}{0.5^{2}}\Bigr) d \theta}}
 $$
 
 ### Compute the posterior distribution 
@@ -347,13 +363,17 @@ data.frame(
   , posterior_dist
 ) %>% 
 ggplot(., mapping = aes(x = theta, y = posterior_dist)) +
-  geom_line(lwd = 1.2, color = "black") +
+  geom_line(lwd = 1.2, color = viridisLite::viridis(n = 3)[1]) +
   xlab(latex2exp::TeX("$\\theta$")) +
   ylab(latex2exp::TeX("$\\[\\theta | y\\]$")) +
   labs(
     title = "Posterior distribution"
   ) +
-  theme_bw()
+  theme_bw() +
+  theme(
+    plot.title = element_text(size = 10)
+    , axis.text.x = element_text(size = 8)
+  )
 plt_5
 ```
 
@@ -366,8 +386,8 @@ Plot the prior, a histogram of the data, the likelihood, the joint, and the post
 
 ```{r}
 # combine charts
-  ggpubr::ggarrange(
-      plt_1, plt_2, plt_3, plt_4, plt_5
+  cowplot::plot_grid(
+    plotlist =  list(plt_1, plt_2, plt_3, plt_4, plt_5)
       , nrow = 2
       , ncol = 3
     )
@@ -417,19 +437,46 @@ plt_overlay
 Check to be sure that everything is correct using the gamma-Poisson *conjugate* relationship. A gamma distribution is the conjugate for the Poisson likelihood, which means if we have a gamma prior and a Poisson likelihood, then the posterior is a gamma distribution with parameters $\alpha + \sum_{i=1}^{n} y_{i}$ and $\beta + n$, where $\alpha$ and $\beta$ are the parameters of the gamma prior, and we have $n$ observations ($y_i$) of new data. Overlay a plot of the posterior obtained using the conjugate on the plot of the posterior obtained by integration. Your plot should look like the one below. Take a look at your scaled overlay of the posterior, the likelihood, and the prior. The likelihood profile for $\theta$ is based on the data but it shows much less dispersion than the distribution of the data shown in the histogram you constructed. Why?
 
 ```{r}
-# # Calculate the posterior using gamma-Poisson conjugate relationship and overlay on the integrated posterior
-# p.conj = dgamma(theta, sum(y) + mu.prior^2 / sigma.prior^2, length(y) + mu.prior / sigma.prior^2)
-# 
-# par(mfrow=c(1, 1))
-# plot(theta, like.scaled, type = "l", col = "red", xlim = c(5,15), xlab = expression(theta), 
-#   ylab = "Probability density", main = "Scaled Overlay")
-# lines(theta, prior(theta), col = "blue")
-# lines(theta, p.conj, type = "l", lwd = 1, col = "orange")
-# lines(theta, p.theta, col = "black", lwd = 4, type = "l", lty = "dashed")
-# 
-# legend(11, 1.2, legend= c("Scaled likelihood", "Prior","Integrated posterior", "Conjugate posterior"), cex = .8, 
-#   lwd = 2, bty = "n", col = c("red", "blue", "black", "orange"), lty = c("solid", "solid", "dashed", "solid"))
+# if we have a gamma prior and a Poisson likelihood
+  # , then the posterior is a gamma distribution with the parameters...
+  ## calculate the shape alpha for gamma dist
+  alpha <- ( (mu.prior^2)/(sigma.prior^2) ) + sum(y)
+  ## calculate the rate beta for gamma dist
+  beta <- ( (mu.prior)/(sigma.prior^2) ) + length(y)
+  ## probability density f'n
+  posterior_gamma_dist <- dgamma(x = theta, shape = alpha, rate = beta)
 
+#plot
+plt_overlay2 <-
+data.frame(
+  theta
+  , scaled_likelihood
+  , posterior_dist
+  , prior_theta
+  , posterior_gamma_dist
+) %>% 
+ggplot(., mapping = aes(x = theta)) +
+  geom_line(mapping = aes(y = prior_theta, color = "Prior Distribution"), lwd = 1.2) +
+  geom_line(mapping = aes(y = scaled_likelihood, color = "Scaled Likelihood"), lwd = 1.2) +
+  geom_line(mapping = aes(y = posterior_dist, color = "Integrated Posterior"), lwd = 2.5) +
+  geom_line(mapping = aes(y = posterior_gamma_dist, color = "Conjugated Posterior"), lwd = 1) +
+  xlab(latex2exp::TeX("$\\theta$")) +
+  ylab("Probability") +
+  labs(
+    title = "Probability Overlay"
+    , subtitle = "Conjugated Posterior vs. Integrated Posterior"
+  ) +
+  scale_color_viridis_d(alpha = 0.8) +
+  theme_bw() +
+  theme(
+    legend.title = element_blank()
+    , legend.position = "bottom"
+    , legend.direction = "horizontal"
+    , legend.justification = "center" 
+    , legend.box.just = "bottom"
+  ) +
+  guides(color = guide_legend(override.aes = list(size = 5)))
+plt_overlay2
 ```
 
 
@@ -485,8 +532,7 @@ sim_dta <- data.frame(n = c(50, 100)) %>% # n
 # set up plot grid
 plts <- list()
 # create plot for each
-# for (i in 1:nrow(sim_dta)) {
-for (i in 1:6) {
+for (i in 1:nrow(sim_dta)) {
   plts[[i]] <-
     sim_function(
       n_sim = sim_dta$n[i]
