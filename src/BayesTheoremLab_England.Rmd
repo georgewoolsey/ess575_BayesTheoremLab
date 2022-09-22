@@ -9,6 +9,7 @@ output:
 linkcolor: blue
 header-includes:
   - \usepackage{caption}
+  - \captionsetup[figure]{labelformat=empty}
 editor_options: 
   chunk_output_type: console
 knit: (function(inputFile, encoding){ 
@@ -437,6 +438,9 @@ plt_overlay
 Check to be sure that everything is correct using the gamma-Poisson *conjugate* relationship. A gamma distribution is the conjugate for the Poisson likelihood, which means if we have a gamma prior and a Poisson likelihood, then the posterior is a gamma distribution with parameters $\alpha + \sum_{i=1}^{n} y_{i}$ and $\beta + n$, where $\alpha$ and $\beta$ are the parameters of the gamma prior, and we have $n$ observations ($y_i$) of new data. Overlay a plot of the posterior obtained using the conjugate on the plot of the posterior obtained by integration. Your plot should look like the one below. Take a look at your scaled overlay of the posterior, the likelihood, and the prior. The likelihood profile for $\theta$ is based on the data but it shows much less dispersion than the distribution of the data shown in the histogram you constructed. Why?
 
 ```{r}
+###################
+# with original data
+###################
 # if we have a gamma prior and a Poisson likelihood
   # , then the posterior is a gamma distribution with the parameters...
   ## calculate the shape alpha for gamma dist
@@ -445,6 +449,22 @@ Check to be sure that everything is correct using the gamma-Poisson *conjugate* 
   beta <- ( (mu.prior)/(sigma.prior^2) ) + length(y)
   ## probability density f'n
   posterior_gamma_dist <- dgamma(x = theta, shape = alpha, rate = beta)
+###################
+# with new data
+###################
+  # simulate new data
+  n <- 50
+  lambda <- 6.4
+  new_y <- rpois(n = n, lambda = lambda)
+# if we have a gamma prior and a Poisson likelihood
+  # , then the posterior is a gamma distribution with the parameters...
+  ## calculate the shape alpha for gamma dist
+  alpha <- ( (mu.prior^2)/(sigma.prior^2) ) + sum(new_y)
+  ## calculate the rate beta for gamma dist
+  beta <- ( (mu.prior)/(sigma.prior^2) ) + length(new_y)
+  ## probability density f'n
+  posterior_gamma_dist_new <- dgamma(x = theta, shape = alpha, rate = beta)
+
 
 #plot
 plt_overlay2 <-
@@ -454,12 +474,14 @@ data.frame(
   , posterior_dist
   , prior_theta
   , posterior_gamma_dist
+  , posterior_gamma_dist_new
 ) %>% 
 ggplot(., mapping = aes(x = theta)) +
   geom_line(mapping = aes(y = prior_theta, color = "Prior Distribution"), lwd = 1.2) +
   geom_line(mapping = aes(y = scaled_likelihood, color = "Scaled Likelihood"), lwd = 1.2) +
   geom_line(mapping = aes(y = posterior_dist, color = "Integrated Posterior"), lwd = 2.5) +
-  geom_line(mapping = aes(y = posterior_gamma_dist, color = "Conjugated Posterior"), lwd = 1) +
+  geom_line(mapping = aes(y = posterior_gamma_dist, color = "Conjugated Posterior (orig. data)"), lwd = 1) +
+  geom_line(mapping = aes(y = posterior_gamma_dist_new, color = "Conjugated Posterior (new data)"), lwd = 1) +
   xlab(latex2exp::TeX("$\\theta$")) +
   ylab("Probability") +
   labs(
@@ -475,7 +497,8 @@ ggplot(., mapping = aes(x = theta)) +
     , legend.justification = "center" 
     , legend.box.just = "bottom"
   ) +
-  guides(color = guide_legend(override.aes = list(size = 5)))
+  guides(color = guide_legend(nrow = 2, byrow = TRUE, override.aes = list(size = 5)))
+
 plt_overlay2
 ```
 
@@ -523,7 +546,7 @@ sim_function <- function(n_sim, lambda_sim, theta_min, theta_max, theta_step, mu
 
 ### Simulation Plots
 
-```{r}
+```{r, fig.cap="Influence of prior information on the posterior distribution"}
 # data frame for sim
 sim_dta <- data.frame(n = c(50, 100)) %>% # n
   dplyr::full_join(data.frame(sigma = c(0.1, 0.5, 2.5)), by = character()) %>%  # sigma
@@ -533,7 +556,7 @@ sim_dta <- data.frame(n = c(50, 100)) %>% # n
 plts <- list()
 # create plot for each
 for (i in 1:nrow(sim_dta)) {
-  plts[[i]] <-
+  plts[[i]] <- 
     sim_function(
       n_sim = sim_dta$n[i]
       , lambda_sim = 6.4
@@ -571,11 +594,11 @@ for (i in 1:nrow(sim_dta)) {
       guides(color = guide_legend(override.aes = list(size = 5)))
   
 }
-
+# set title 
 # extract the legend from one of the plots
 plts[[nrow(sim_dta)+1]] <- NA
 plts[[nrow(sim_dta)+2]] <- get_legend(plt_overlay)
+# combine plots
 cowplot::plot_grid(plotlist =  plts, nrow = 3, rel_heights = c(1, 1, 0.15))
-
 ```
 
