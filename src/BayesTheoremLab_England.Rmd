@@ -602,3 +602,8 @@ plts[[nrow(sim_dta)+2]] <- get_legend(plt_overlay)
 cowplot::plot_grid(plotlist =  plts, nrow = 3, rel_heights = c(1, 1, 0.15))
 ```
 
+## 17
+
+Gather some classmates and discuss the position of the prior, likelihood and posterior along the x axis and their variances.
+
+\textcolor{violet}{A diffuse prior will have limited influence on the posterior distribution. When the number of samples increases, the likelihood has lower variance which results in the posterior having lower variance.} 
